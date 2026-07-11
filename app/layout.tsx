@@ -1,4 +1,4 @@
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Inter, Herr_Von_Muellerhoff } from "next/font/google"
 import "./globals.css"
 
@@ -16,6 +16,15 @@ const script = Herr_Von_Muellerhoff({
 export const metadata: Metadata = {
   title: "TSB Invoice Maker",
   description: "Offline invoice maker for The Stars Brand",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "TSB Invoice Maker",
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: "#171717",
 }
 
 export default function RootLayout({

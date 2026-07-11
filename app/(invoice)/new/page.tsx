@@ -59,6 +59,7 @@ export default function NewInvoicePage() {
     try {
       await persistInvoice(data)
       router.push("/history")
+      form.reset()
     } finally {
       setActiveAction(null)
     }
@@ -72,8 +73,10 @@ export default function NewInvoicePage() {
         const filename = buildExportFilename(invoice)
         if (kind === "pdf") {
           await exportAsPdf(filename)
+          form.reset()
         } else {
           await exportAsImage(filename)
+          form.reset()
         }
       } finally {
         setActiveAction(null)
