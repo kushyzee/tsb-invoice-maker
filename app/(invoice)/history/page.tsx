@@ -13,9 +13,6 @@ export default function HistoryPage() {
   const { invoices, isLoading, searchTerm, setSearchTerm } = useInvoiceHistory()
 
   const handleDelete = async (id: string) => {
-    // Plain confirm() for now — deletion has no undo, so some friction is
-    // intentional. Worth upgrading to a proper AlertDialog later if the
-    // native browser prompt feels out of place.
     const confirmed = window.confirm(
       "Delete this invoice? This can't be undone."
     )

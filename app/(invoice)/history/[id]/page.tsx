@@ -11,9 +11,13 @@ import { useExportInvoice } from "@/features/invoice-export/hooks/useExportInvoi
 import { buildExportFilename } from "@/features/invoice-export/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { useSettings } from "@/features/settings/hooks/useSettings"
 
 export default function InvoiceDetailPage() {
   const params = useParams<{ id: string }>()
+
+  const settings = useSettings()
+
   const router = useRouter()
   const previewRef = useRef<HTMLDivElement>(null)
   const { exportAsImage, exportAsPdf, isExporting } =
@@ -79,7 +83,7 @@ export default function InvoiceDetailPage() {
         </Button>
       </div>
 
-      <InvoicePreview ref={previewRef} invoice={invoice} />
+      <InvoicePreview settings={settings} ref={previewRef} invoice={invoice} />
 
       <div className="mx-auto mt-4 flex max-w-[700px] justify-end gap-2">
         <Button

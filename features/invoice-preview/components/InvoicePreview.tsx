@@ -21,7 +21,7 @@ import { InvoiceFooter } from "@/features/invoice-preview/components/sections/In
 
 type InvoicePreviewProps = {
   invoice: Invoice
-  settings?: Settings
+  settings: Settings
 }
 
 const PAGE_WIDTH = 700
