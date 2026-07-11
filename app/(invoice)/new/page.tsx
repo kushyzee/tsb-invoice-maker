@@ -1,16 +1,19 @@
 "use client"
 
 import { useRef, useState } from "react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { FileDown, ImageDown } from "lucide-react"
+import { FileDown, History, ImageDown, Settings } from "lucide-react"
 import { useInvoiceForm } from "@/features/invoice-form/hooks/useInvoiceForm"
 import { useNextInvoiceNumber } from "@/features/invoice-form/hooks/useNextInvoiceNumber"
+import { useSettings } from "@/features/settings/hooks/useSettings"
 import { InvoiceForm } from "@/features/invoice-form/components/InvoiceForm"
 import { InvoiceSummary } from "@/features/invoice-form/components/InvoiceSummary"
 import { InvoicePreview } from "@/features/invoice-preview/components/InvoicePreview"
 import { useExportInvoice } from "@/features/invoice-export/hooks/useExportInvoice"
 import { buildExportFilename } from "@/features/invoice-export/utils"
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { saveInvoice } from "@/shared/lib/invoiceRepository"
 import { generateId } from "@/shared/lib/id"
 import type { Invoice } from "@/features/invoice-form/types"
@@ -25,6 +28,7 @@ export default function NewInvoicePage() {
     suggestedInvoiceNumber
   )
   const [activeAction, setActiveAction] = useState<ActiveAction>(null)
+  const settings = useSettings()
 
   const previewRef = useRef<HTMLDivElement>(null)
   const { exportAsImage, exportAsPdf } = useExportInvoice(previewRef)
@@ -40,11 +44,6 @@ export default function NewInvoicePage() {
     ...values,
   }
 
-  // Shared by the Save button and both Export buttons — exporting still
-  // saves first, so invoice numbering stays reliable (the next-number
-  // suggestion is derived from what's actually saved) and every exported
-  // invoice has a record in history, without her needing a separate
-  // explicit "Save" step first.
   const persistInvoice = async (data: InvoiceFormValues): Promise<Invoice> => {
     const now = new Date().toISOString()
     const invoice: Invoice = {
@@ -87,9 +86,30 @@ export default function NewInvoicePage() {
 
   return (
     <div className="min-h-svh bg-neutral-100 p-4 sm:p-6">
-      <h1 className="mx-auto mb-4 max-w-6xl text-lg font-semibold text-neutral-900">
-        TSB Invoice Maker
-      </h1>
+      <div className="mx-auto mb-4 flex max-w-6xl items-center justify-between">
+        <h1 className="text-lg font-semibold text-neutral-900">
+          TSB Invoice Maker
+        </h1>
+        <div className="flex gap-2">
+          <Link
+            href="/history"
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "gap-1.5"
+            )}
+          >
+            <History className="h-4 w-4" />
+            History
+          </Link>
+          <Link
+            href="/settings"
+            className={cn(buttonVariants({ variant: "outline", size: "icon" }))}
+            aria-label="Settings"
+          >
+            <Settings className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
       <form
         onSubmit={onSave}
         className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[380px_1fr]"
@@ -130,7 +150,11 @@ export default function NewInvoicePage() {
             {activeAction === "save" ? "Saving…" : "Save invoice"}
           </Button>
         </div>
-        <InvoicePreview ref={previewRef} invoice={previewInvoice} />
+        <InvoicePreview
+          ref={previewRef}
+          invoice={previewInvoice}
+          settings={settings}
+        />
       </form>
     </div>
   )

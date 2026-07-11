@@ -1,9 +1,11 @@
-import { SETTINGS } from "@/shared/lib/constants"
+type PaymentNoteBlockProps = {
+  note: string
+}
 
-export function PaymentNoteBlock() {
+export function PaymentNoteBlock({ note }: PaymentNoteBlockProps) {
   return (
     <p className="max-w-[220px] text-right text-sm leading-relaxed text-neutral-800">
-      {SETTINGS.paymentTermsNote}
+      {note}
     </p>
   )
 }

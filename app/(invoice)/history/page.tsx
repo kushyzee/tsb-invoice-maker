@@ -1,18 +1,21 @@
 "use client"
 
 import Link from "next/link"
-import { Plus } from "lucide-react"
+import { Plus, Settings } from "lucide-react"
 import { useInvoiceHistory } from "@/features/invoice-history/hooks/useInvoiceHistory"
 import { InvoiceSearchBar } from "@/features/invoice-history/components/InvoiceSearchBar"
 import { InvoiceHistoryList } from "@/features/invoice-history/components/InvoiceHistoryList"
 import { buttonVariants } from "@/components/ui/button"
-import { deleteInvoice } from "@/shared/lib/invoiceRepository"
 import { cn } from "@/lib/utils"
+import { deleteInvoice } from "@/shared/lib/invoiceRepository"
 
 export default function HistoryPage() {
   const { invoices, isLoading, searchTerm, setSearchTerm } = useInvoiceHistory()
 
   const handleDelete = async (id: string) => {
+    // Plain confirm() for now — deletion has no undo, so some friction is
+    // intentional. Worth upgrading to a proper AlertDialog later if the
+    // native browser prompt feels out of place.
     const confirmed = window.confirm(
       "Delete this invoice? This can't be undone."
     )
@@ -27,10 +30,24 @@ export default function HistoryPage() {
           <h1 className="text-lg font-semibold text-neutral-900">
             Invoice History
           </h1>
-          <Link href="/new" className={cn(buttonVariants(), "gap-1.5")}>
-            <Plus className="h-4 w-4" />
-            New
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/settings"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "icon" })
+              )}
+              aria-label="Settings"
+            >
+              <Settings className="h-4 w-4" />
+            </Link>
+            <Link
+              href="/new"
+              className={cn(buttonVariants({ size: "sm" }), "gap-1.5")}
+            >
+              <Plus className="h-4 w-4" />
+              New
+            </Link>
+          </div>
         </div>
 
         <div className="mb-4">

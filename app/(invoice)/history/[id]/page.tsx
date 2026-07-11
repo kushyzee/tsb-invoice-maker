@@ -19,10 +19,6 @@ export default function InvoiceDetailPage() {
   const { exportAsImage, exportAsPdf, isExporting } =
     useExportInvoice(previewRef)
 
-  // useLiveQuery returns `undefined` while loading. getInvoiceById also
-  // resolves to `undefined` when nothing's found, which would be
-  // indistinguishable from "still loading" — so we coerce a genuine
-  // not-found into `null` here to tell the two states apart below.
   const invoice = useLiveQuery(async () => {
     const found = await getInvoiceById(params.id)
     return found ?? null

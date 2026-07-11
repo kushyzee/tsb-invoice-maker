@@ -1,10 +1,12 @@
-import { SETTINGS } from "@/shared/lib/constants"
+type InvoiceFooterProps = {
+  businessName: string
+}
 
-export function InvoiceFooter() {
+export function InvoiceFooter({ businessName }: InvoiceFooterProps) {
   return (
     <div className="flex justify-end pt-6">
       <span className="font-script text-2xl text-neutral-900">
-        {SETTINGS.businessName}
+        {businessName}
       </span>
     </div>
   )

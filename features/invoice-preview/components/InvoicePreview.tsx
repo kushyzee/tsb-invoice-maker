@@ -8,6 +8,7 @@ import {
   useState,
 } from "react"
 import type { Invoice } from "@/features/invoice-form/types"
+import type { Settings } from "@/features/settings/types"
 import { calculateTotals } from "@/features/invoice-preview/utils"
 import { InvoiceHeader } from "@/features/invoice-preview/components/sections/InvoiceHeader"
 import { IssuedToBlock } from "@/features/invoice-preview/components/sections/IssuedToBlock"
@@ -20,12 +21,13 @@ import { InvoiceFooter } from "@/features/invoice-preview/components/sections/In
 
 type InvoicePreviewProps = {
   invoice: Invoice
+  settings?: Settings
 }
 
 const PAGE_WIDTH = 700
 
 export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
-  function InvoicePreview({ invoice }, forwardedRef) {
+  function InvoicePreview({ invoice, settings }, forwardedRef) {
     const { subtotal, discountAmount, total } = calculateTotals(invoice)
 
     const containerRef = useRef<HTMLDivElement>(null)
@@ -59,7 +61,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
 
     const pageContent = (
       <>
-        <InvoiceHeader />
+        <InvoiceHeader businessName={settings!.businessName} />
 
         <div className="mt-14 flex justify-between">
           <IssuedToBlock customerName={invoice.customerName} />
@@ -71,8 +73,12 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
         </div>
 
         <div className="mt-8 flex justify-between">
-          <PayToBlock />
-          <PaymentNoteBlock />
+          <PayToBlock
+            bankName={settings!.payToBankName}
+            accountName={settings!.payToAccountName}
+            accountNumber={settings!.payToAccountNumber}
+          />
+          <PaymentNoteBlock note={settings!.paymentTermsNote} />
         </div>
 
         <div className="mt-10">
@@ -87,7 +93,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
           />
         </div>
 
-        <InvoiceFooter />
+        <InvoiceFooter businessName={settings!.businessName} />
       </>
     )
 
