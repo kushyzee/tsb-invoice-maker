@@ -185,7 +185,7 @@ export function InvoiceForm({
                     type="number"
                     inputMode="numeric"
                     aria-invalid={fieldState.invalid}
-                    value={field.value}
+                    value={field.value === 0 ? "" : field.value}
                     onChange={(e) =>
                       field.onChange(Number(e.target.value) || 0)
                     }

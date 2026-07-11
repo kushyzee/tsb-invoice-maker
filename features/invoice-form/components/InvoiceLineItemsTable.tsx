@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Trash2 } from "lucide-react"
 import type { UseFormReturn, UseFieldArrayReturn } from "react-hook-form"
-import { InvoiceFormValues } from "@/features/invoice-form/schema"
+import type { InvoiceFormValues } from "@/features/invoice-form/schema"
 
 type InvoiceLineItemsTableProps = {
   form: UseFormReturn<InvoiceFormValues>
@@ -88,11 +88,17 @@ export function InvoiceLineItemsTable({
                   inputMode="numeric"
                   aria-invalid={fieldState.invalid}
                   placeholder="Qty"
-                  value={field.value}
-                  onChange={(e) =>
-                    field.onChange(Math.max(1, Number(e.target.value) || 1))
-                  }
-                  onBlur={field.onBlur}
+                  value={field.value === 0 ? "" : field.value}
+                  onChange={(e) => {
+                    const parsed = Number(e.target.value)
+                    field.onChange(Number.isNaN(parsed) ? 0 : parsed)
+                  }}
+                  onBlur={() => {
+                    if (!field.value || field.value < 1) {
+                      field.onChange(1)
+                    }
+                    field.onBlur()
+                  }}
                 />
                 {fieldState.invalid && (
                   <FieldError errors={[fieldState.error]} />

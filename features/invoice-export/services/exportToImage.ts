@@ -4,7 +4,7 @@ export async function exportNodeToPngDataUrl(
   node: HTMLElement
 ): Promise<string> {
   return toPng(node, {
-    pixelRatio: 2,
+    pixelRatio: 3,
     style: {
       transform: "none",
     },
