@@ -15,19 +15,19 @@ type ItemsTableProps = {
 
 export function ItemsTable({ lineItems }: ItemsTableProps) {
   return (
-    <Table>
+    <Table className="table-fixed">
       <TableHeader>
         <TableRow className="border-neutral-800 hover:bg-transparent">
           <TableHead className="text-xs font-bold tracking-wide text-neutral-900">
             DESCRIPTION
           </TableHead>
-          <TableHead className="text-right text-xs font-bold tracking-wide text-neutral-900">
+          <TableHead className="w-[110px] text-right text-xs font-bold tracking-wide text-neutral-900">
             UNIT PRICE
           </TableHead>
-          <TableHead className="text-right text-xs font-bold tracking-wide text-neutral-900">
+          <TableHead className="w-[70px] text-right text-xs font-bold tracking-wide text-neutral-900">
             QTY
           </TableHead>
-          <TableHead className="text-right text-xs font-bold tracking-wide text-neutral-900">
+          <TableHead className="w-[100px] text-right text-xs font-bold tracking-wide text-neutral-900">
             TOTAL
           </TableHead>
         </TableRow>
@@ -35,7 +35,7 @@ export function ItemsTable({ lineItems }: ItemsTableProps) {
       <TableBody>
         {lineItems.map((item, index) => (
           <TableRow key={item.id} className="border-none hover:bg-transparent">
-            <TableCell className="py-3 text-sm text-neutral-800">
+            <TableCell className="py-3 text-sm wrap-break-word whitespace-normal text-neutral-800">
               {index + 1}. {item.description || "—"}
             </TableCell>
             <TableCell className="py-3 text-right text-sm text-neutral-800">

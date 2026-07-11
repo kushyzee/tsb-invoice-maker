@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Inter, Mrs_Saint_Delafield } from "next/font/google"
+import { Inter, Herr_Von_Muellerhoff } from "next/font/google"
 import "./globals.css"
 
 const sans = Inter({
@@ -7,7 +7,7 @@ const sans = Inter({
   variable: "--font-sans",
 })
 
-const script = Mrs_Saint_Delafield({
+const script = Herr_Von_Muellerhoff({
   subsets: ["latin"],
   weight: "400",
   variable: "--font-script",

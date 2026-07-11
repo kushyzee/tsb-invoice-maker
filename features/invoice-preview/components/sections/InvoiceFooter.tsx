@@ -4,8 +4,8 @@ type InvoiceFooterProps = {
 
 export function InvoiceFooter({ businessName }: InvoiceFooterProps) {
   return (
-    <div className="flex justify-end pt-6">
-      <span className="font-script text-2xl text-neutral-900">
+    <div className="flex justify-end pt-12">
+      <span className="font-script text-3xl text-neutral-900">
         {businessName}
       </span>
     </div>

@@ -85,7 +85,7 @@ export const InvoicePreview = forwardRef<HTMLDivElement, InvoicePreviewProps>(
           <ItemsTable lineItems={invoice.lineItems} />
         </div>
 
-        <div className="mt-4">
+        <div className="mt-10">
           <TotalsBlock
             subtotal={subtotal}
             discountAmount={discountAmount}
