@@ -18,7 +18,7 @@ export function TotalsBlock({
           SUBTOTAL
         </span>
         <span className="text-sm font-semibold text-neutral-900">
-          {formatNaira(subtotal)} naira
+          {formatNaira(subtotal)}
         </span>
       </div>
 
@@ -32,7 +32,7 @@ export function TotalsBlock({
       <div className="mt-1 flex items-baseline justify-end gap-2">
         <span className="text-sm font-bold text-neutral-900">TOTAL</span>
         <span className="text-sm font-bold text-neutral-900">
-          {formatNaira(total)} naira
+          {formatNaira(total)}
         </span>
       </div>
     </div>

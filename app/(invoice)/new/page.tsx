@@ -3,7 +3,7 @@
 import { useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { FileDown, History, ImageDown, Settings } from "lucide-react"
+import { FileDown, ImageDown, Settings } from "lucide-react"
 import { useInvoiceForm } from "@/features/invoice-form/hooks/useInvoiceForm"
 import { useNextInvoiceNumber } from "@/features/invoice-form/hooks/useNextInvoiceNumber"
 import { useSettings } from "@/features/settings/hooks/useSettings"
@@ -35,8 +35,6 @@ export default function NewInvoicePage() {
 
   const values = form.watch()
 
-  // Form values map directly onto the Invoice shape for preview purposes —
-  // id/createdAt/updatedAt only become real once the invoice is saved.
   const previewInvoice: Invoice = {
     id: "draft",
     createdAt: "",
@@ -98,7 +96,6 @@ export default function NewInvoicePage() {
               "gap-1.5"
             )}
           >
-            <History className="h-4 w-4" />
             History
           </Link>
           <Link
