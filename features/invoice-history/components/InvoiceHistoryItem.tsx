@@ -40,7 +40,7 @@ export function InvoiceHistoryItem({
             variant="ghost"
             size="icon"
             onClick={() => onDelete(invoice.id)}
-            className="text-neutral-500 hover:text-red-600"
+            className="text-destructive hover:text-red-600"
             aria-label={`Delete invoice ${invoice.invoiceNumber}`}
           >
             <Trash2 className="h-4 w-4" />

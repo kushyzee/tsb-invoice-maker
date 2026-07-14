@@ -4,24 +4,22 @@ import { useRef } from "react"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { useLiveQuery } from "dexie-react-hooks"
-import { ArrowLeft, Trash2, FileDown, ImageDown } from "lucide-react"
+import { ArrowLeft, Trash2, FileDown, ImageDown, Pencil } from "lucide-react"
 import { getInvoiceById, deleteInvoice } from "@/shared/lib/invoiceRepository"
 import { InvoicePreview } from "@/features/invoice-preview/components/InvoicePreview"
+import { useSettings } from "@/features/settings/hooks/useSettings"
 import { useExportInvoice } from "@/features/invoice-export/hooks/useExportInvoice"
 import { buildExportFilename } from "@/features/invoice-export/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
-import { useSettings } from "@/features/settings/hooks/useSettings"
 
 export default function InvoiceDetailPage() {
   const params = useParams<{ id: string }>()
-
-  const settings = useSettings()
-
   const router = useRouter()
   const previewRef = useRef<HTMLDivElement>(null)
   const { exportAsImage, exportAsPdf, isExporting } =
     useExportInvoice(previewRef)
+  const settings = useSettings()
 
   const invoice = useLiveQuery(async () => {
     const found = await getInvoiceById(params.id)
@@ -71,19 +69,31 @@ export default function InvoiceDetailPage() {
           <ArrowLeft className="h-4 w-4" />
           Back
         </Link>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={handleDelete}
-          className="gap-1.5 text-neutral-500 hover:text-red-600"
-        >
-          <Trash2 className="h-4 w-4" />
-          Delete
-        </Button>
+        <div className="flex gap-2">
+          <Link
+            href={`/history/${params.id}/edit`}
+            className={cn(
+              buttonVariants({ variant: "outline", size: "sm" }),
+              "gap-1.5"
+            )}
+          >
+            <Pencil className="h-4 w-4" />
+            Edit
+          </Link>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={handleDelete}
+            className="gap-1.5 text-destructive hover:text-red-600"
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete
+          </Button>
+        </div>
       </div>
 
-      <InvoicePreview settings={settings} ref={previewRef} invoice={invoice} />
+      <InvoicePreview ref={previewRef} invoice={invoice} settings={settings} />
 
       <div className="mx-auto mt-4 flex max-w-[700px] justify-end gap-2">
         <Button
