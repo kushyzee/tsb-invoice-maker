@@ -390,7 +390,10 @@ see the decisions above.
    `getInvoiceById`.
 4. `useFinanceInvoices` hook — `useLiveQuery` over `listInvoices()`.
 5. `MonthlyFinanceSummary` and `MonthlyInvoiceBreakdown` components.
-6. A Finance link added to the `/new` and `/history` headers so the page is reachable.
+6. Finance made reachable from the `/new` and `/history` headers. (Superseded by the later
+   navigation refactor: those per-page links were removed and all four destinations — including
+   Finances — now live in the shared header at
+   [../components/app-header.tsx](../components/app-header.tsx).)
 
 **Files:**
 
