@@ -202,7 +202,7 @@ export function InvoiceForm({
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Costs</CardTitle>
+          <CardTitle className="text-base">Costs &amp; Payment</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
           <Controller
@@ -228,6 +228,31 @@ export function InvoiceForm({
               </Field>
             )}
           />
+
+          <Controller
+            name="amountPaid"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Amount paid</FieldLabel>
+                <Input
+                  id={field.name}
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  placeholder="0"
+                  aria-invalid={fieldState.invalid}
+                  value={field.value === 0 ? "" : field.value}
+                  onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                  onBlur={field.onBlur}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+
           <p className="text-xs text-neutral-500">
             Internal (never shown on the customer&rsquo;s invoice).
           </p>

@@ -7,10 +7,12 @@ import { useLiveQuery } from "dexie-react-hooks"
 import { ArrowLeft, Trash2, FileDown, ImageDown, Pencil } from "lucide-react"
 import { getInvoiceById, deleteInvoice } from "@/shared/lib/invoiceRepository"
 import { InvoicePreview } from "@/features/invoice-preview/components/InvoicePreview"
+import { InvoiceFinanceSummary } from "@/features/invoice-finance/components/InvoiceFinanceSummary"
 import { useSettings } from "@/features/settings/hooks/useSettings"
 import { useExportInvoice } from "@/features/invoice-export/hooks/useExportInvoice"
 import { buildExportFilename } from "@/features/invoice-export/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
 export default function InvoiceDetailPage() {
@@ -118,6 +120,18 @@ export default function InvoiceDetailPage() {
           {isExporting ? "Exporting…" : "Export PDF"}
         </Button>
       </div>
+
+      <Card className="mx-auto mt-6 max-w-[700px]">
+        <CardHeader>
+          <CardTitle className="text-base">Internal finance</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm">
+          <InvoiceFinanceSummary values={invoice} />
+          <p className="mt-3 text-xs text-neutral-500">
+            Internal (never shown on the customer&rsquo;s invoice).
+          </p>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 Persistent implementation log for the finance-tracking feature.
 
-**Status:** Phase 1 implemented and verified. Phases 2–3 not started.
+**Status:** Phases 1–2 implemented and verified. Phase 3 not started.
 **Last updated:** 2026-09-27
 
 ---
@@ -31,7 +31,7 @@ Related analysis: [../DATE-FIELDS.md](../DATE-FIELDS.md) — date-field semantic
 ## Phases
 
 * [x] Phase 1 — Invoice financial inputs
-* [ ] Phase 2 — Payment tracking & invoice financial summary
+* [x] Phase 2 — Payment tracking & invoice financial summary
 * [ ] Phase 3 — Monthly finance overview
 
 ---
@@ -83,8 +83,11 @@ Listed so a returning developer does not mistake any of these for settled:
   `maximumFractionDigits: 0`, so kobo are invisible) vs integer kobo. Affects stored data.
 * **Whether invoices become immutable snapshots** — today totals are recomputed on read and
   settings are resolved at render time, so historical invoices change retroactively.
-* **Shape of payment records** — a single "amount paid" field on the invoice vs a list of dated
-  payments. Determines whether partial payments and payment dates are trackable at all.
+* **Shape of payment records** — **settled for now as a single scalar `amountPaid`** (Phases 1–2).
+  The scope constraints exclude payment history, dates, and methods, so partial payments can be
+  recorded as a running total but cannot be attributed to a date or split into transactions. A
+  dated-payment model remains a possible future change; it would be a new table plus a migration,
+  and it would change how "amount paid" is entered.
 * **Definition of "projected profit" vs "actual profit"** — **resolved for projected in Phase 1**:
   projected profit is computed live as Invoiced − Expenses, never manually entered and never
   stored (see the Phase 1 log). "Actual profit" is still undefined pending Phase 2.
@@ -251,17 +254,128 @@ Changes made during this phase that are **not** part of the feature:
 
 ### Phase 2 — Payment tracking & invoice financial summary
 
-**Status:** Not started
+**Status:** Complete — implemented and verified.
 
 **Changes:**
 
+1. New `features/invoice-finance/` — the finance feature's home.
+   * `utils.ts` — `calculateFinance()` centralises the six derived figures and delegates
+     the invoice total to the canonical `calculateTotals`.
+   * `components/InvoiceFinanceSummary.tsx` — the shared internal summary, rendering
+     Invoiced, Amount paid, Expenses, Projected profit, Actual profit, Outstanding.
+2. The form's **Costs** card becomes **Costs & Payment** and gains an `amountPaid` input
+   alongside Expenses (a payment is not a cost, hence the rename).
+3. `InvoiceSummary` (live, on the new and edit pages) now renders all six figures through the
+   shared component instead of showing only Expenses and Projected profit.
+4. The invoice detail page gains a read-only **Internal finance** card below the document.
+
 **Files:**
+
+Created (2):
+
+* [../features/invoice-finance/utils.ts](../features/invoice-finance/utils.ts) — derived figures
+* [../features/invoice-finance/components/InvoiceFinanceSummary.tsx](../features/invoice-finance/components/InvoiceFinanceSummary.tsx)
+  — shared internal summary
+
+Modified (3):
+
+* [../features/invoice-form/components/InvoiceForm.tsx](../features/invoice-form/components/InvoiceForm.tsx)
+  — Costs & Payment card with the Amount paid input
+* [../features/invoice-form/components/InvoiceSummary.tsx](../features/invoice-form/components/InvoiceSummary.tsx)
+  — renders the shared finance summary
+* [../app/(invoice)/history/[id]/page.tsx](../app/(invoice)/history/[id]/page.tsx) — internal
+  finance card
+
+Not touched: the preview, export, and history features, and the whole data layer (see below).
 
 **Data/schema changes:**
 
+None. No new migration, and no change to the persisted shape. `amountPaid` has been stored,
+validated, defaulted, and normalised on read since Phase 1 — Phase 2 is derived calculations plus
+UI. Derived values remain computed on read and are never persisted.
+
+**Implementation decisions:**
+
+* **Amount paid is entered in the edit form**, in the same card as Expenses. That keeps a single
+  write path, reuses the existing RHF/Zod validation and save flow, and needs no new pattern. The
+  rejected alternative — editing it inline on the detail page — would have introduced the app's
+  first inline-edit surface and a second write path, and the app still has no error/toast
+  mechanism to report a failed write (CODEBASE.md §5).
+* **The detail page gets a read-only panel** so the financial position is visible without entering
+  edit mode. That page is otherwise purely the customer document, so the panel is labelled
+  "Internal finance" and carries the same "never shown on the customer's invoice" note as the form.
+* **One shared component for both surfaces**, so the labels and derivations cannot drift apart.
+  `calculateFinance` accepts `Pick<Invoice, …>`, which both a stored `Invoice` and live
+  `InvoiceFormValues` satisfy.
+* **The invoice total is not reimplemented.** `calculateFinance` calls the canonical
+  `calculateTotals`; verified that the internal Invoiced equals the TOTAL printed on the customer
+  document (₦180,000 in the recorded run).
+* **Negative values are never clamped.** Negative profit and negative outstanding render in
+  `text-destructive`, the treatment Phase 1 introduced for projected profit.
+* **Overpayment — flagged UX decision.** The app has no established treatment for paying more than
+  was invoiced (CODEBASE.md §5 records that no status, payment, or balance concept exists). Phase 2
+  therefore shows the negative outstanding as-is and adds an `(overpaid)` hint beside the label
+  rather than hiding or clamping it. Negative *profit* gets no hint, because a loss is an ordinary
+  outcome while overpayment is anomalous. If the business prefers a different treatment — a
+  warning, or refusing the entry — it is isolated to `InvoiceFinanceSummary`.
+* **`Invoiced` is shown in the internal block even though the form summary already shows the same
+  number as `Total`.** Deliberate: the internal block is specified to communicate all six figures
+  and is reused verbatim on the detail page, so a self-contained block beats a variant system.
+
 **Verification:**
 
+Static: `pnpm typecheck` clean; `eslint` clean on the changed paths; production build clean across
+all 9 routes. The build was run in an **isolated copy** of the project so the dev server's `.next`
+was not polluted (the failure mode recorded in the Phase 1 Notes); `public/sw.js` was therefore
+left untouched.
+
+End-to-end (Chromium via Playwright, real IndexedDB, `Africa/Lagos`), 30 assertions, all passing,
+covering every item in the phase brief:
+
+* a new invoice starts with all six figures at ₦0 and is persisted with `amountPaid = 0`,
+  `expenses = 0` (items 1, 5)
+* a payment recorded after creation survives the save, and the detail page reflects it (item 2)
+* a later payment edit persists and re-renders (item 3); Expenses stay editable throughout (item 4)
+* Invoiced tracks the line items (100,000 → 200,000) and the discount (fixed 20,000 →
+  ₦180,000), and projected profit and outstanding follow it, while **actual profit is unaffected by
+  price** (item 10)
+* changing Expenses updates projected *and* actual profit live (item 11); changing Amount paid
+  updates actual profit *and* outstanding live (item 12)
+* actual profit is correctly negative when nothing has been paid against costs (−₦30,000), and is
+  neither clamped nor hidden (item 8)
+* paying more than the invoice total yields outstanding of −₦20,000 with the `(overpaid)` hint and
+  destructive styling; outstanding of ₦0 renders on exact payment (items 7, 8)
+* the internal Invoiced equals the total on the customer document
+* a **v2 database seeded with a pre-finance invoice** opens with all six figures zeroed and the
+  correct ₦75,000 Invoiced (item 9)
+* deleting the invoice removes the record and its financial data (item 13)
+* the internal panel is **structurally outside** the node handed to `html-to-image`, that node
+  contains no internal text or attributes, and PNG and PDF still export as valid files (item 14)
+
+The Phase 1 suite (28 assertions) was re-run as a regression check and passes. Two of its
+assertions were **rescoped, not weakened**: they asserted that the whole *detail page* contained no
+internal financial terms, which Phase 2 intentionally makes false by adding the panel there. They
+now assert it of the customer-facing document node instead — the invariant the brief actually
+states.
+
+**Discoveries for Phase 3:**
+
+* **`calculateFinance` is the aggregation primitive.** Monthly figures are a sum of
+  `calculateFinance(invoice)` over the invoices in a month, so the per-invoice and per-month
+  numbers cannot diverge. Nothing derived is stored, so months recompute after edits and deletes.
+* **Nothing in the finance code touches dates.** `calculateFinance` takes no date input at all, so
+  Phase 3's grouping stays entirely in the aggregation layer, keyed on `issueDate.slice(0, 7)`.
+* **`useInvoiceHistory` still reads Dexie directly**, bypassing the repository's defaults
+  normalisation. This did not matter in Phase 2 (the detail page reads through the repository), but
+  Phase 3's aggregation must decide: route through the repository, or normalise where it reads.
+  Still open from Phase 1.
+* **`issueDate` still has no range validation**, so a future-dated invoice creates a phantom month
+  (still open; §4 of [../DATE-FIELDS.md](../DATE-FIELDS.md)).
+
 **Notes:**
+
+The form summary now shows `Invoiced` immediately below `Total` with the same value — intentional,
+see the decisions above.
 
 ### Phase 3 — Monthly finance overview
 
