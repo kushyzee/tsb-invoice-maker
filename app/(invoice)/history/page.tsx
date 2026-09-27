@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Plus, Settings } from "lucide-react"
+import { Plus, Settings, Wallet } from "lucide-react"
 import { useInvoiceHistory } from "@/features/invoice-history/hooks/useInvoiceHistory"
 import { InvoiceSearchBar } from "@/features/invoice-history/components/InvoiceSearchBar"
 import { InvoiceHistoryList } from "@/features/invoice-history/components/InvoiceHistoryList"
@@ -28,6 +28,15 @@ export default function HistoryPage() {
             Invoice History
           </h1>
           <div className="flex gap-2">
+            <Link
+              href="/finance"
+              className={cn(
+                buttonVariants({ variant: "outline", size: "icon" })
+              )}
+              aria-label="Finance"
+            >
+              <Wallet className="h-4 w-4" />
+            </Link>
             <Link
               href="/settings"
               className={cn(

@@ -2,7 +2,7 @@
 
 Persistent implementation log for the finance-tracking feature.
 
-**Status:** Phases 1–2 implemented and verified. Phase 3 not started.
+**Status:** All three phases implemented and verified.
 **Last updated:** 2026-09-27
 
 ---
@@ -32,7 +32,7 @@ Related analysis: [../DATE-FIELDS.md](../DATE-FIELDS.md) — date-field semantic
 
 * [x] Phase 1 — Invoice financial inputs
 * [x] Phase 2 — Payment tracking & invoice financial summary
-* [ ] Phase 3 — Monthly finance overview
+* [x] Phase 3 — Monthly finance overview
 
 ---
 
@@ -352,7 +352,7 @@ covering every item in the phase brief:
 * the internal panel is **structurally outside** the node handed to `html-to-image`, that node
   contains no internal text or attributes, and PNG and PDF still export as valid files (item 14)
 
-The Phase 1 suite (28 assertions) was re-run as a regression check and passes. Two of its
+The Phase 1 suite was re-run as a regression check and passes (29 assertions). Two of its
 assertions were **rescoped, not weakened**: they asserted that the whole *detail page* contained no
 internal financial terms, which Phase 2 intentionally makes false by adding the panel there. They
 now assert it of the customer-facing document node instead — the invariant the brief actually
@@ -379,17 +379,136 @@ see the decisions above.
 
 ### Phase 3 — Monthly finance overview
 
-**Status:** Not started
+**Status:** Complete — implemented and verified.
 
 **Changes:**
 
+1. New `/finance` route — "Financial Overview": a month selector, the month's totals, and an
+   invoice-level breakdown.
+2. Month helpers and `calculateMonthlyFinance()` added to the finance utils.
+3. `listInvoices()` added to the invoice repository, applying the same financial-field defaults as
+   `getInvoiceById`.
+4. `useFinanceInvoices` hook — `useLiveQuery` over `listInvoices()`.
+5. `MonthlyFinanceSummary` and `MonthlyInvoiceBreakdown` components.
+6. A Finance link added to the `/new` and `/history` headers so the page is reachable.
+
 **Files:**
+
+Created (4):
+
+* [../app/(invoice)/finance/page.tsx](../app/(invoice)/finance/page.tsx) — the page
+* [../features/invoice-finance/hooks/useFinanceInvoices.ts](../features/invoice-finance/hooks/useFinanceInvoices.ts)
+* [../features/invoice-finance/components/MonthlyFinanceSummary.tsx](../features/invoice-finance/components/MonthlyFinanceSummary.tsx)
+* [../features/invoice-finance/components/MonthlyInvoiceBreakdown.tsx](../features/invoice-finance/components/MonthlyInvoiceBreakdown.tsx)
+
+Modified (4):
+
+* [../features/invoice-finance/utils.ts](../features/invoice-finance/utils.ts) — `monthKeyOf`,
+  `currentMonth`, `shiftMonth`, `calculateMonthlyFinance`
+* [../shared/lib/invoiceRepository.ts](../shared/lib/invoiceRepository.ts) — `listInvoices()`
+* [../app/(invoice)/new/page.tsx](../app/(invoice)/new/page.tsx) — Finance link
+* [../app/(invoice)/history/page.tsx](../app/(invoice)/history/page.tsx) — Finance link
 
 **Data/schema changes:**
 
+None. No migration, no new table, and no stored aggregates — the month totals are recomputed from
+the invoice records on every read.
+
+**Implementation decisions:**
+
+* **`/finance` sits in the existing `(invoice)` route group**, matching how `/new` and `/history`
+  are organised. There is no route-group layout in this app (page chrome is per page), so the page
+  repeats the established shell: `min-h-svh bg-neutral-100` with a centred `max-w` column.
+* **The page reads through the repository**, via a new `listInvoices()`. This resolves the question
+  left open in Phases 1–2: aggregation reads *normalised* records, so an invoice created before the
+  finance feature contributes `0`/`0` rather than `undefined` (which would have propagated `NaN`
+  through every sum). `useInvoiceHistory` still reads Dexie directly; it uses no financial fields,
+  so it was left alone rather than refactored.
+* **Month totals sum `calculateFinance()` per invoice** rather than summing the raw fields
+  independently, so the monthly and per-invoice figures cannot drift apart. This was the Phase 2
+  discovery, now cashed in.
+* **`issueDate.slice(0, 7)` for the month key, always by string.** `dueDate`, `createdAt`, and
+  `updatedAt` are not read anywhere in the finance code, and no `Date` is ever constructed from an
+  issue date.
+* **The default month is the user's local calendar month**, from local getters (`currentMonth()`),
+  for the same reason `todayISO()` was corrected in Phase 1 — `toISOString()` would report the
+  previous month during the first hours of the local day.
+* **The month selector is a native `<input type="month">` plus prev/next buttons.** The input gives
+  a `YYYY-MM` value and a picker, consistent with the app's existing native date inputs; the
+  stepper exists because Firefox does not support `type="month"` and silently degrades it to a text
+  field.
+* **`shiftMonth` moves the month by arithmetic on its numeric parts**, never by constructing a
+  `Date` from the string — the same UTC-parse trap the month key avoids.
+* **Breakdown ordering is `issueDate`, then invoice number**, so a month reads chronologically
+  rather than in whatever order Dexie returns; the invoice number links to the invoice.
+* **Terminology follows the phase brief exactly**, which uses *Collected* for the month tiles and
+  *Amount paid* for the breakdown column; the Phase 2 per-invoice panel also says "Amount paid".
+  Noted below as something to unify if the split is unwanted.
+* **Negative month totals render in the destructive colour**, as in Phases 1–2. The "(overpaid)"
+  hint is *not* repeated at month level: across several invoices a negative outstanding is an
+  aggregate, not a single overpayment.
+* **An empty month is a normal state**, showing zeros plus "No invoices in this month." rather than
+  an error or a blank page.
+
 **Verification:**
 
+Static: `pnpm typecheck` clean; `eslint` clean on the changed paths; production build clean across
+all 10 routes (now including `/finance`), run in an isolated copy of the project so the dev
+server's `.next` was not polluted.
+
+End-to-end (Chromium via Playwright, real IndexedDB, `Africa/Lagos`). The fixture set is seeded
+straight into schema v3 and is deliberately adversarial: four July invoices — #1 with a `dueDate`
+in August *and* a `createdAt` in September, #2 with a `dueDate` *before* its issue date, #3 a
+pre-finance record with no financial fields at all, #4 loss-making — plus one August invoice.
+
+* items 1, 2 — the page loads; the default month equals the browser's own current local month
+  (2026-09), which is empty: zeros and the empty state, not an error (item 17)
+* item 3 — switching to August shows different figures; the stepper crosses a year boundary
+  (2026-01 → 2025-12 → 2026-01)
+* items 4, 5, 6 — July contains exactly the four July issue dates, and #1/#2 stay in July although
+  their `dueDate` and `createdAt` point at other months
+* items 7–11 — July: Invoiced ₦230,000, Collected ₦50,000, Expenses ₦80,000, Actual profit
+  −₦30,000 (= 50,000 − 80,000), Outstanding ₦180,000 (= 230,000 − 50,000)
+* item 12 — the pre-finance row shows ₦40,000 invoiced with ₦0 paid, ₦0 expenses, ₦0 profit: no
+  `NaN`
+* item 16 — #4's −₦40,000 renders negative, in the destructive colour
+* cross-check — the breakdown's Invoiced for #2 (₦80,000, after a fixed ₦20,000 discount) equals
+  the TOTAL printed on that invoice's own page, confirming one canonical total
+* item 13 — editing #1's amount paid to ₦100,000 moved July to Collected ₦110,000, profit
+  ₦30,000, outstanding ₦120,000, with no manual refresh
+* item 14 — moving #4 to August removed it from July (3 invoices) **taking its payment and its loss
+  with it** (Collected ₦100,000, profit ₦70,000, outstanding ₦120,000), and August absorbed it
+  (2 invoices, ₦80,000 invoiced, ₦60,000 expenses, ₦20,000 profit, ₦0 outstanding)
+* item 15 — deleting #5 updated August to 1 invoice with the correspondingly reduced totals
+* item 18 — the Phase 1 (29 assertion) and Phase 2 (33 assertion) suites re-run green, alongside
+  24 assertions for this phase: 86 in total, no failures
+
 **Notes:**
+
+* Two problems found while verifying were in the throwaway harness, not the app: month selection
+  was landing *before* React hydrated after a navigation (the input event was discarded and the
+  month stayed at its default, showing zeros), and one July expectation had not accounted for #4's
+  payment leaving July when the invoice did. Both were fixed in the harness; the app's figures were
+  correct throughout.
+* **Google Fonts is intermittently flaky from this machine.** The first production build of this
+  phase failed with `next/font` "Failed to fetch `Inter`/`Herr Von Muellerhoff` from Google Fonts",
+  and the identical source built cleanly on retry, with `curl` returning 200 either side. A build
+  can therefore fail for reasons unrelated to the code. This is separate from the `.next`-sharing
+  failure recorded in the Phase 1 Notes.
+
+**Deferred for this phase:**
+
+* **The selected month is component state, not a URL parameter**, so a month cannot be linked or
+  bookmarked. The brief asks for a simple selector in V1; search params would be the next step.
+* **Terminology split** — *Collected* on the month tiles vs *Amount paid* on the breakdown column
+  and per-invoice panel. This follows the brief's own wording, but unifying it is a one-line change
+  if the split reads oddly.
+* **Charts** remain explicitly out of scope.
+* **Month totals scan every invoice on each render.** Fine at boutique volume (the existing search
+  and invoice-number code already load the whole table); a `db.version(4)` index on `issueDate`, or
+  a stored aggregate, is the answer if the table ever grows to thousands of rows.
+* `useInvoiceHistory` still bypasses the repository — harmless today (no financial fields), but it
+  is the one remaining raw read.
 
 ---
 

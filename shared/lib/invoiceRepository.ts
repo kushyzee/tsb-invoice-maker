@@ -25,6 +25,16 @@ export async function getInvoiceById(id: string): Promise<Invoice | undefined> {
   return invoice && withFinancialDefaults(invoice)
 }
 
+/**
+ * Every invoice, newest first. Reads through the same financial-field defaults
+ * as `getInvoiceById`, so callers that aggregate (the finance page) always see
+ * numbers rather than `undefined` for invoices created before the feature.
+ */
+export async function listInvoices(): Promise<Invoice[]> {
+  const invoices = await db.invoices.orderBy("createdAt").reverse().toArray()
+  return invoices.map(withFinancialDefaults)
+}
+
 export async function getHighestInvoiceNumber(): Promise<number> {
   const all = await db.invoices.toArray()
   const numbers = all

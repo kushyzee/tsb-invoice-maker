@@ -3,7 +3,7 @@
 import { useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { FileDown, ImageDown, Settings } from "lucide-react"
+import { FileDown, ImageDown, Settings, Wallet } from "lucide-react"
 import { useInvoiceForm } from "@/features/invoice-form/hooks/useInvoiceForm"
 import { useNextInvoiceNumber } from "@/features/invoice-form/hooks/useNextInvoiceNumber"
 import { useSettings } from "@/features/settings/hooks/useSettings"
@@ -92,6 +92,13 @@ export default function NewInvoicePage() {
           TSB Invoice Maker
         </h1>
         <div className="flex gap-2">
+          <Link
+            href="/finance"
+            className={cn(buttonVariants({ variant: "outline", size: "icon" }))}
+            aria-label="Finance"
+          >
+            <Wallet className="h-4 w-4" />
+          </Link>
           <Link
             href="/history"
             className={cn(
