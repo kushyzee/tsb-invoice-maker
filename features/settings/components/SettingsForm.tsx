@@ -8,6 +8,7 @@ import { Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
+import { toast } from "@/components/ui/toast"
 import {
   settingsSchema,
   type SettingsFormValues,
@@ -38,6 +39,7 @@ export function SettingsForm() {
     try {
       await saveSettings(data)
       setJustSaved(true)
+      toast.add({ title: "Settings saved", type: "success" })
     } finally {
       setIsSaving(false)
     }

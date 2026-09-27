@@ -13,6 +13,7 @@ import { useExportInvoice } from "@/features/invoice-export/hooks/useExportInvoi
 import { buildExportFilename } from "@/features/invoice-export/utils"
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { toast } from "@/components/ui/toast"
 import { cn } from "@/lib/utils"
 
 export default function InvoiceDetailPage() {
@@ -34,6 +35,7 @@ export default function InvoiceDetailPage() {
     )
     if (!confirmed) return
     await deleteInvoice(params.id)
+    toast.add({ title: "Invoice deleted", type: "success" })
     router.push("/history")
   }
 

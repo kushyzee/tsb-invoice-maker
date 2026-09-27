@@ -4,6 +4,7 @@ import { useInvoiceHistory } from "@/features/invoice-history/hooks/useInvoiceHi
 import { InvoiceSearchBar } from "@/features/invoice-history/components/InvoiceSearchBar"
 import { InvoiceHistoryList } from "@/features/invoice-history/components/InvoiceHistoryList"
 import { deleteInvoice } from "@/shared/lib/invoiceRepository"
+import { toast } from "@/components/ui/toast"
 
 export default function HistoryPage() {
   const { invoices, isLoading, searchTerm, setSearchTerm } = useInvoiceHistory()
@@ -14,6 +15,7 @@ export default function HistoryPage() {
     )
     if (!confirmed) return
     await deleteInvoice(id)
+    toast.add({ title: "Invoice deleted", type: "success" })
   }
 
   return (

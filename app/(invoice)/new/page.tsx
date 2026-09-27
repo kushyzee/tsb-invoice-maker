@@ -1,7 +1,6 @@
 "use client"
 
 import { useRef, useState } from "react"
-import { useRouter } from "next/navigation"
 import { FileDown, ImageDown } from "lucide-react"
 import { useInvoiceForm } from "@/features/invoice-form/hooks/useInvoiceForm"
 import { useNextInvoiceNumber } from "@/features/invoice-form/hooks/useNextInvoiceNumber"
@@ -12,6 +11,7 @@ import { InvoicePreview } from "@/features/invoice-preview/components/InvoicePre
 import { useExportInvoice } from "@/features/invoice-export/hooks/useExportInvoice"
 import { buildExportFilename } from "@/features/invoice-export/utils"
 import { Button } from "@/components/ui/button"
+import { toast } from "@/components/ui/toast"
 import { saveInvoice } from "@/shared/lib/invoiceRepository"
 import { generateId } from "@/shared/lib/id"
 import type { Invoice } from "@/features/invoice-form/types"
@@ -20,7 +20,6 @@ import type { InvoiceFormValues } from "@/features/invoice-form/schema"
 type ActiveAction = "save" | "pdf" | "image" | null
 
 export default function NewInvoicePage() {
-  const router = useRouter()
   const suggestedInvoiceNumber = useNextInvoiceNumber()
   const { form, lineItems, addLineItem, removeLineItem } = useInvoiceForm(
     suggestedInvoiceNumber
@@ -55,8 +54,12 @@ export default function NewInvoicePage() {
   const onSave = form.handleSubmit(async (data) => {
     setActiveAction("save")
     try {
-      await persistInvoice(data)
-      router.push("/history")
+      const invoice = await persistInvoice(data)
+      toast.add({
+        title: "Invoice saved",
+        description: `Invoice #${invoice.invoiceNumber}`,
+        type: "success",
+      })
       form.reset()
     } finally {
       setActiveAction(null)
@@ -69,13 +72,21 @@ export default function NewInvoicePage() {
       try {
         const invoice = await persistInvoice(data)
         const filename = buildExportFilename(invoice)
-        if (kind === "pdf") {
-          await exportAsPdf(filename)
-          form.reset()
-        } else {
-          await exportAsImage(filename)
-          form.reset()
+        const exported =
+          kind === "pdf"
+            ? await exportAsPdf(filename)
+            : await exportAsImage(filename)
+
+        // A dismissed share sheet resolves false — don't claim it was exported.
+        if (exported) {
+          toast.add({
+            title: "Invoice exported",
+            description:
+              kind === "pdf" ? "Saved as a PDF." : "Saved as a PNG image.",
+            type: "success",
+          })
         }
+        form.reset()
       } finally {
         setActiveAction(null)
       }

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Inter, Herr_Von_Muellerhoff } from "next/font/google"
 import { AppHeader } from "@/components/app-header"
+import { Toaster } from "@/components/ui/toast"
 import "./globals.css"
 
 const sans = Inter({
@@ -38,8 +39,10 @@ export default function RootLayout({
       <body
         className={`${sans.variable} ${script.variable} flex min-h-svh flex-col bg-neutral-100 font-sans text-foreground antialiased`}
       >
-        <AppHeader />
-        <div className="flex-1">{children}</div>
+        <Toaster>
+          <AppHeader />
+          <div className="flex-1">{children}</div>
+        </Toaster>
       </body>
     </html>
   )
