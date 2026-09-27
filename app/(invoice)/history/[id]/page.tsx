@@ -39,7 +39,7 @@ export default function InvoiceDetailPage() {
 
   if (invoice === undefined) {
     return (
-      <div className="min-h-svh bg-neutral-100 p-6">
+      <div className="p-6">
         <p className="text-sm text-neutral-500">Loading…</p>
       </div>
     )
@@ -47,7 +47,7 @@ export default function InvoiceDetailPage() {
 
   if (invoice === null) {
     return (
-      <div className="min-h-svh bg-neutral-100 p-6">
+      <div className="p-6">
         <p className="text-sm text-neutral-500">Invoice not found.</p>
         <Link href="/history" className="mt-2 inline-block text-sm underline">
           Back to history
@@ -59,7 +59,7 @@ export default function InvoiceDetailPage() {
   const filename = buildExportFilename(invoice)
 
   return (
-    <div className="min-h-svh bg-neutral-100 p-4 sm:p-6">
+    <div className="p-4 sm:p-6">
       <div className="mx-auto mb-4 flex max-w-[700px] items-center justify-between">
         <Link
           href="/history"

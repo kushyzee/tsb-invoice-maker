@@ -1,12 +1,8 @@
 "use client"
 
-import Link from "next/link"
-import { Plus, Settings, Wallet } from "lucide-react"
 import { useInvoiceHistory } from "@/features/invoice-history/hooks/useInvoiceHistory"
 import { InvoiceSearchBar } from "@/features/invoice-history/components/InvoiceSearchBar"
 import { InvoiceHistoryList } from "@/features/invoice-history/components/InvoiceHistoryList"
-import { buttonVariants } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 import { deleteInvoice } from "@/shared/lib/invoiceRepository"
 
 export default function HistoryPage() {
@@ -21,40 +17,11 @@ export default function HistoryPage() {
   }
 
   return (
-    <div className="min-h-svh bg-neutral-100 p-4 sm:p-6">
+    <div className="p-4 sm:p-6">
       <div className="mx-auto max-w-2xl">
-        <div className="mb-4 flex items-center justify-between">
-          <h1 className="text-lg font-semibold text-neutral-900">
-            Invoice History
-          </h1>
-          <div className="flex gap-2">
-            <Link
-              href="/finance"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "icon" })
-              )}
-              aria-label="Finance"
-            >
-              <Wallet className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/settings"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "icon" })
-              )}
-              aria-label="Settings"
-            >
-              <Settings className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/new"
-              className={cn(buttonVariants({ size: "sm" }), "gap-1.5")}
-            >
-              <Plus className="h-4 w-4" />
-              New
-            </Link>
-          </div>
-        </div>
+        <h1 className="mb-4 text-lg font-semibold text-neutral-900">
+          Invoice History
+        </h1>
 
         <div className="mb-4">
           <InvoiceSearchBar value={searchTerm} onChange={setSearchTerm} />

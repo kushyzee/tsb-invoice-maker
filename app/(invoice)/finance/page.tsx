@@ -1,8 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import Link from "next/link"
-import { ChevronLeft, ChevronRight, History, Plus, Settings } from "lucide-react"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldLabel } from "@/components/ui/field"
@@ -41,43 +40,11 @@ export default function FinancePage() {
   )
 
   return (
-    <div className="min-h-svh bg-neutral-100 p-4 sm:p-6">
+    <div className="p-4 sm:p-6">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <h1 className="text-lg font-semibold text-neutral-900">
-            Financial Overview
-          </h1>
-          <div className="flex gap-2">
-            <Link
-              href="/history"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "sm" }),
-                "gap-1.5"
-              )}
-            >
-              <History className="h-4 w-4" />
-              History
-            </Link>
-            <Link
-              href="/new"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "icon" })
-              )}
-              aria-label="New invoice"
-            >
-              <Plus className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/settings"
-              className={cn(
-                buttonVariants({ variant: "outline", size: "icon" })
-              )}
-              aria-label="Settings"
-            >
-              <Settings className="h-4 w-4" />
-            </Link>
-          </div>
-        </div>
+        <h1 className="mb-4 text-lg font-semibold text-neutral-900">
+          Financial Overview
+        </h1>
 
         <Card className="mb-4">
           <CardHeader>
@@ -134,9 +101,7 @@ export default function FinancePage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">
-                  Invoice breakdown
-                </CardTitle>
+                <CardTitle className="text-base">Invoice breakdown</CardTitle>
               </CardHeader>
               <CardContent>
                 <MonthlyInvoiceBreakdown invoices={monthInvoices} />

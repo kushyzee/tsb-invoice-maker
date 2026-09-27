@@ -1,9 +1,8 @@
 "use client"
 
 import { useRef, useState } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { FileDown, ImageDown, Settings, Wallet } from "lucide-react"
+import { FileDown, ImageDown } from "lucide-react"
 import { useInvoiceForm } from "@/features/invoice-form/hooks/useInvoiceForm"
 import { useNextInvoiceNumber } from "@/features/invoice-form/hooks/useNextInvoiceNumber"
 import { useSettings } from "@/features/settings/hooks/useSettings"
@@ -12,8 +11,7 @@ import { InvoiceSummary } from "@/features/invoice-form/components/InvoiceSummar
 import { InvoicePreview } from "@/features/invoice-preview/components/InvoicePreview"
 import { useExportInvoice } from "@/features/invoice-export/hooks/useExportInvoice"
 import { buildExportFilename } from "@/features/invoice-export/utils"
-import { Button, buttonVariants } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
 import { saveInvoice } from "@/shared/lib/invoiceRepository"
 import { generateId } from "@/shared/lib/id"
 import type { Invoice } from "@/features/invoice-form/types"
@@ -86,37 +84,7 @@ export default function NewInvoicePage() {
   const isBusy = activeAction !== null
 
   return (
-    <div className="min-h-svh bg-neutral-100 p-4 sm:p-6">
-      <div className="mx-auto mb-4 flex max-w-6xl items-center justify-between">
-        <h1 className="text-lg font-semibold text-neutral-900">
-          TSB Invoice Maker
-        </h1>
-        <div className="flex gap-2">
-          <Link
-            href="/finance"
-            className={cn(buttonVariants({ variant: "outline", size: "icon" }))}
-            aria-label="Finance"
-          >
-            <Wallet className="h-4 w-4" />
-          </Link>
-          <Link
-            href="/history"
-            className={cn(
-              buttonVariants({ variant: "outline", size: "sm" }),
-              "gap-1.5"
-            )}
-          >
-            History
-          </Link>
-          <Link
-            href="/settings"
-            className={cn(buttonVariants({ variant: "outline", size: "icon" }))}
-            aria-label="Settings"
-          >
-            <Settings className="h-4 w-4" />
-          </Link>
-        </div>
-      </div>
+    <div className="p-4 sm:p-6">
       <form
         onSubmit={onSave}
         className="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[380px_1fr]"
