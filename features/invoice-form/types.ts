@@ -16,6 +16,8 @@ export type Invoice = {
   lineItems: LineItem[]
   discountType: DiscountType
   discountValue: number
+  expenses: number
+  amountPaid: number
   createdAt: string
   updatedAt: string
 }

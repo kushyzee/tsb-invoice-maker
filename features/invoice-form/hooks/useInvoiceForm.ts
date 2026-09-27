@@ -10,8 +10,13 @@ import {
 import { generateId } from "@/shared/lib/utils"
 import { Invoice } from "../types"
 
+// Built from local date parts, not `toISOString()`, which converts to UTC and
+// can return yesterday's date during the first hours of the local day.
 function todayISO() {
-  return new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  const month = String(now.getMonth() + 1).padStart(2, "0")
+  const day = String(now.getDate()).padStart(2, "0")
+  return `${now.getFullYear()}-${month}-${day}`
 }
 
 function emptyLineItem() {
@@ -33,6 +38,8 @@ export function useInvoiceForm(
       lineItems: [emptyLineItem()],
       discountType: "none",
       discountValue: 0,
+      expenses: 0,
+      amountPaid: 0,
     },
   })
 
@@ -46,6 +53,8 @@ export function useInvoiceForm(
       lineItems: initialInvoice.lineItems,
       discountType: initialInvoice.discountType,
       discountValue: initialInvoice.discountValue,
+      expenses: initialInvoice.expenses,
+      amountPaid: initialInvoice.amountPaid,
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialInvoice])

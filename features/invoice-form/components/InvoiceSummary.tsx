@@ -6,12 +6,14 @@ import type { InvoiceFormValues } from "@/features/invoice-form/schema"
 type InvoiceSummaryProps = {
   values: Pick<
     InvoiceFormValues,
-    "lineItems" | "discountType" | "discountValue"
+    "lineItems" | "discountType" | "discountValue" | "expenses"
   >
 }
 
 export function InvoiceSummary({ values }: InvoiceSummaryProps) {
   const { subtotal, discountAmount, total } = calculateTotals(values)
+  // Invoiced (total after discount) − expenses. May be negative.
+  const projectedProfit = total - values.expenses
 
   return (
     <Card>
@@ -29,6 +31,22 @@ export function InvoiceSummary({ values }: InvoiceSummaryProps) {
         <div className="flex justify-between font-semibold text-neutral-900">
           <span>Total</span>
           <span>{formatNaira(total)}</span>
+        </div>
+
+        <div className="mt-2 space-y-1 border-t border-neutral-200 pt-2">
+          <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
+            Internal
+          </p>
+          <div className="flex justify-between text-neutral-600">
+            <span>Expenses</span>
+            <span>{formatNaira(values.expenses)}</span>
+          </div>
+          <div className="flex justify-between font-semibold text-neutral-900">
+            <span>Projected profit</span>
+            <span className={projectedProfit < 0 ? "text-destructive" : ""}>
+              {formatNaira(projectedProfit)}
+            </span>
+          </div>
         </div>
       </CardContent>
     </Card>

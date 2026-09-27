@@ -15,6 +15,8 @@ export const invoiceFormSchema = z.object({
   lineItems: z.array(lineItemSchema).min(1, "Add at least one item"),
   discountType: z.enum(["none", "fixed", "percentage"]),
   discountValue: z.number().min(0),
+  expenses: z.number().min(0, "Must be 0 or more"),
+  amountPaid: z.number().min(0, "Must be 0 or more"),
 })
 
 export type InvoiceFormValues = z.infer<typeof invoiceFormSchema>
