@@ -85,8 +85,8 @@ export default function FinancePage() {
             <CardTitle className="text-base">Month</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-end gap-2">
-              <Field className="max-w-56">
+            <div className="flex flex-wrap items-end gap-2">
+              <Field className="max-w-64">
                 <FieldLabel htmlFor="finance-month" className="sr-only">
                   Month
                 </FieldLabel>
@@ -97,35 +97,37 @@ export default function FinancePage() {
                   onChange={(event) => setMonth(event.target.value)}
                 />
               </Field>
-              <button
-                type="button"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "icon" }),
-                  "shrink-0"
-                )}
-                onClick={() => setMonth((current) => shiftMonth(current, -1))}
-                aria-label="Previous month"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                className={cn(
-                  buttonVariants({ variant: "outline", size: "icon" }),
-                  "shrink-0"
-                )}
-                onClick={() => setMonth((current) => shiftMonth(current, 1))}
-                aria-label="Next month"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
+              <div className="inline-flex gap-2">
+                <button
+                  type="button"
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "icon" }),
+                    "shrink-0"
+                  )}
+                  onClick={() => setMonth((current) => shiftMonth(current, -1))}
+                  aria-label="Previous month"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  className={cn(
+                    buttonVariants({ variant: "outline", size: "icon" }),
+                    "shrink-0"
+                  )}
+                  onClick={() => setMonth((current) => shiftMonth(current, 1))}
+                  aria-label="Next month"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+
               <Button
                 type="button"
                 variant="outline"
-                size="sm"
                 onClick={onExport}
                 disabled={isExporting || isLoading || !month}
-                className="ml-auto gap-1.5"
+                className="ml-auto flex-1 gap-1.5 sm:flex-auto"
               >
                 <FileDown className="h-4 w-4" />
                 {isExporting ? "Exporting…" : "Export PDF"}
