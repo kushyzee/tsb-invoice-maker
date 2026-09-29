@@ -67,6 +67,39 @@ export function shiftMonth(month: string, delta: number): string {
   return `${shiftedYear}-${String(shiftedMonth).padStart(2, "0")}`
 }
 
+const MONTH_LABELS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+]
+
+/**
+ * Human label for a `YYYY-MM` key, e.g. "2026-09" → "September 2026". Built
+ * from the key's own parts rather than by parsing it as a date, for the same
+ * reason `monthKeyOf` slices instead of constructing a `Date`. An unset or
+ * malformed key comes back unchanged, so the report can always name its month.
+ */
+export function formatMonthLabel(month: string): string {
+  const [year, monthNumber] = month.split("-").map(Number)
+  const label = MONTH_LABELS[monthNumber - 1]
+  if (!year || !label) return month
+  return `${label} ${year}`
+}
+
+/** Filename stem for the finance report PDF; the export appends the extension. */
+export function buildFinanceReportFilename(month: string): string {
+  return `TSB-Finance-Report-${month}`
+}
+
 export type MonthlyFinance = {
   invoiced: number
   amountPaid: number

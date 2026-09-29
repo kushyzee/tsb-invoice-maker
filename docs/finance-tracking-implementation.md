@@ -2,8 +2,8 @@
 
 Persistent implementation log for the finance-tracking feature.
 
-**Status:** All three phases implemented and verified.
-**Last updated:** 2026-09-27
+**Status:** All four phases implemented and verified.
+**Last updated:** 2026-09-29
 
 ---
 
@@ -33,6 +33,7 @@ Related analysis: [../DATE-FIELDS.md](../DATE-FIELDS.md) — date-field semantic
 * [x] Phase 1 — Invoice financial inputs
 * [x] Phase 2 — Payment tracking & invoice financial summary
 * [x] Phase 3 — Monthly finance overview
+* [x] Phase 4 — Finance report PDF export
 
 ---
 
@@ -65,9 +66,14 @@ Not decisions — these are facts about the current codebase that constrain the 
 
 * **Dexie schema is at version 2** (`invoices`, `settings`). Expenses and payments require a
   `db.version(3)` migration.
-* **No error handling exists anywhere** in the app — all seven `try` blocks are `try/finally` with
-  no `catch` — and there is **no notification/toast mechanism**. Any new failure path (a failed
-  payment write, a bad expense value) has nowhere to surface.
+* ~~**No error handling exists anywhere** in the app — all seven `try` blocks are `try/finally`
+  with no `catch` — and there is **no notification/toast mechanism**. Any new failure path (a
+  failed payment write, a bad expense value) has nowhere to surface.~~
+  **Stale as of commit `5488841`**, which added `components/ui/toast.tsx` (Base UI
+  `ToastPrimitive`) and wired `<Toaster>` into [../app/layout.tsx](../app/layout.tsx). Invoice
+  save, both exports, delete, and settings save already toast. Phases 1–3's decisions to avoid
+  inline error UI still hold, but "nowhere to surface a failure" is no longer true — Phase 4 took
+  the opportunity and toasts on its own new failure path.
 * **No tests exist**, and no test tooling is installed. (Phase 1 was verified with a throwaway
   Playwright harness kept outside the repo — see the Phase 1 log. The project still has no test
   setup of its own.)
@@ -513,6 +519,152 @@ pre-finance record with no financial fields at all, #4 loss-making — plus one 
 * `useInvoiceHistory` still bypasses the repository — harmless today (no financial fields), but it
   is the one remaining raw read.
 
+### Phase 4 — Finance report PDF export
+
+**Status:** Complete — implemented and verified.
+
+**Changes:**
+
+1. "Export PDF" on `/finance`, in the Month card next to the stepper.
+2. The selected month can be exported as a real, text-based PDF: business name, title, month, the
+   five summary metrics + invoice count, and the invoice-level breakdown.
+3. `shareOrDownload` moved out of `useExportInvoice` into its own service, now shared.
+
+**The finding that shaped the design:** jsPDF's built-in fonts are WinAnsi/CP1252 encoded and
+**cannot represent the naira sign (U+20A6)**. Verified, not assumed — writing `₦230,000` through
+them and extracting with poppler `pdftotext` yields `" ¦230,000"`; `-₦30,000` yields
+`"negative - ¦30,000"`. That rules out a text PDF using stock fonts, and it is exactly why this
+phase embeds a Unicode TTF. The alternative considered and rejected first — rasterising an HTML
+report through the existing `exportNodeToPngDataUrl` → `exportPngDataUrlToPdf` pipeline — does
+work, but produces a ~14 MB image with no selectable text and needs an off-screen DOM node. The
+embedded-font route is ~90 KB, paginates properly, and is searchable.
+
+**Files:**
+
+Created (5):
+
+* [../public/fonts/Inter-Regular.ttf](../public/fonts/Inter-Regular.ttf) + `OFL.txt` — the embedded
+  font (static Inter Regular, 324 KB, SIL OFL-1.1; the licence text is kept beside it)
+* [../features/invoice-finance/services/financeReportPdf.ts](../features/invoice-finance/services/financeReportPdf.ts)
+  — pure `data → jsPDF` builder: layout, summary, paginated table, footers
+* [../features/invoice-finance/services/financeReportFont.ts](../features/invoice-finance/services/financeReportFont.ts)
+  — fetches `/fonts/Inter-Regular.ttf`, chunked base64, cached across exports
+* [../features/invoice-finance/hooks/useExportFinanceReport.ts](../features/invoice-finance/hooks/useExportFinanceReport.ts)
+  — `isExporting` + `exportAsPdf`
+* [../features/invoice-export/services/shareOrDownload.ts](../features/invoice-export/services/shareOrDownload.ts)
+  — moved out of `useExportInvoice.ts` (see decisions)
+
+Modified (3):
+
+* [../app/(invoice)/finance/page.tsx](../app/(invoice)/finance/page.tsx) — button, handler, toasts
+* [../features/invoice-finance/utils.ts](../features/invoice-finance/utils.ts) —
+  `formatMonthLabel`, `buildFinanceReportFilename`
+* [../features/invoice-export/hooks/useExportInvoice.ts](../features/invoice-export/hooks/useExportInvoice.ts)
+  — imports the extracted helper (net −≈25 lines)
+
+**Data/schema changes:**
+
+None. No migration, no new table, no stored aggregates — and no new npm dependency. The only new
+artefact is the font file. The report still recomputes from the invoice records on every read.
+
+**Implementation decisions:**
+
+* **The report is fed, never computes.** `buildFinanceReportPdf` takes `month`, `totals` and
+  `invoices` from the page's own `useMemo`s and calls the same `calculateFinance` per row that
+  `MonthlyInvoiceBreakdown` calls. It never re-filters, re-sorts, or re-sums, so there is one
+  calculation path and the PDF cannot drift from the screen.
+* **The font is fetched at export time, not bundled into JS.** `addFileToVFS` needs base64;
+  inlining 324 KB (≈430 KB base64) into the bundle or a committed source module was rejected. It
+  is cached in a module-level promise, and a rejected load clears the cache so a later export can
+  retry. Base64 conversion is chunked — spreading 324 KB into `String.fromCharCode` overflows the
+  call stack.
+* **No `next.config.ts` change was needed.** `@serwist/next` globs the whole `public/` directory
+  into the precache manifest with a content-hash revision when `additionalPrecacheEntries` is
+  unset, so the font is already available offline. Verified in the generated `sw.js`.
+* **`shareOrDownload` was moved, not duplicated.** A data→PDF builder has no node ref, so the
+  ref-based hook could not be reused as-is; the only shared logic is the share/download fallback
+  and its `AbortError` handling, which is easy to get subtly wrong. It now lives in
+  `invoice-export/services/` and both hooks use it. The customer export's behaviour is unchanged.
+  *(A rename of `useExportInvoice` → `useExportNode`, considered earlier in this phase, turned out
+  to be unnecessary: the finance report never touches a DOM node.)*
+* **Labels mirror the finance page exactly**, including the page's own *Collected* (summary) vs
+  *Amount paid* (breakdown) split. Unifying that split remains deferred.
+* **One font weight only.** jsPDF cannot synthesise a bold and a second TTF would double the
+  asset, so hierarchy comes from size and colour. The script brand font is deliberately unused, as
+  is the `INVOICE` wordmark: the report must not read as an invoice. Every page carries
+  "Internal document — not a customer invoice." plus a page number.
+* **Negatives use the resolved `--destructive` colour.** `oklch(0.577 0.245 27.325)` is pinned as
+  rgb(231, 0, 10) with a comment, since jsPDF never touches CSS. Never clamped, never hidden.
+* **The report paginates.** Rows are measured before drawing so none is split across a page break,
+  and the table header is redrawn on each new page.
+* **Long customer names wrap** (`splitTextToSize`, row height follows the line count) rather than
+  being silently truncated.
+* **A `catch` + `type: "error"` toast** was added on this new path only, because a font fetch is a
+  genuinely new failure mode. The invoice export is still silent on failure — see follow-ups.
+* **No React component for the report.** It is data → PDF, so there is no off-screen node, no
+  `forwardRef`, and no `html-to-image` involvement.
+
+**Verification:**
+
+Static: `pnpm typecheck` clean; `eslint` clean on all changed paths; production build clean across
+all 10 routes, run in an **isolated copy** so the dev `.next` and the committed `public/sw.js`
+stayed untouched (confirmed: `git status` shows no `public/sw.js` change).
+
+Logic, running the real shipped source in Node (`tsc`-emitted to a temp dir, fixtures seeded as in
+the browser): the July report's totals matched hand-computed values (Invoiced ₦330,000, Collected
+₦90,000, Expenses ₦125,000, Actual −₦35,000, Outstanding ₦240,000 over 5 invoices); A4 pages
+confirmed by `pdfinfo`; a 45-invoice month produced 2 pages with the header repeated; `pdffonts`
+reports one embedded Identity-H font; the destructive colour was asserted differentially in the
+content stream — 0 red ops for an empty month and for a profits-only month, 2 for a loss, 2 for an
+overpayment, 3 combined (jsPDF emits a colour op only on state change).
+
+End-to-end (Chromium, real IndexedDB, `Africa/Lagos`; **43 assertions, all passing**), with the
+adversarial fixture set: five July invoices — one with a `dueDate` in August, one with a fixed
+discount, one **pre-finance record with no `expenses`/`amountPaid` at all**, one loss-making, one
+overpaid — plus one August invoice:
+
+* the exported file is a valid PDF named `TSB-Finance-Report-2026-07.pdf`, and a "Report exported"
+  toast appears
+* the report names the selected month ("July 2026"); the August report contains only `#06` and none
+  of July's invoices
+* all five summary metrics and the invoice count are **string-identical to the on-page tiles**
+* every breakdown row's five figures and its issue date match the on-page table
+* `₦` is present and `¦` (the stock-font failure mode) never is
+* negatives render as `-₦35,000`, `-₦80,000`, `-₦20,000` — unclamped — and are destructive-coloured
+* the pre-finance record shows ₦0, never `NaN`
+* a long diacritic name ("Ọ̀jọ́ Adéyẹmí Fashion House Limited") survives the round trip and wraps
+* an empty month exports a valid PDF showing zeros, "0 invoices", and the empty state
+* **IndexedDB is deep-equal before and after the export** (6 records) — the export is read-only
+* the customer invoice export still works after the `useExportInvoice` refactor: a valid
+  `TSB-Invoice-01-Adejumobi-Esther.pdf` of 14,027,103 bytes, and the exported document node still
+  contains no internal finance terms
+
+The harness is throwaway and lives outside the repo, so no test framework or dependency was added.
+
+**Discoveries / issues found:**
+
+* **`allowedDevOrigins` is stale again — this silently blocks hydration.** Running the harness
+  against the machine's current LAN IP (`10.48.88.18`) left `/finance` frozen on "Loading…": the
+  HMR websocket is refused, React never hydrates, and the client-only UI never runs. `localhost`
+  works fine. This is CODEBASE §8 #20 recurring, and the wildcard covers only the `192.168.0.0/24`
+  subnet. Anyone running the dev server from another network will hit this.
+* **A raw `indexedDB.open(name, 3)` in a test harness fails** with "requested version (3) is less
+  than the existing version (30)": Dexie stores its schema version multiplied by 10. Open
+  unversioned when seeding or reading fixture data.
+* **`formatNaira` silently maps `NaN` to `₦0`.** It guards with `Number.isFinite`, so a missed
+  normalisation would produce a plausible-looking `₦0` rather than an obvious `NaN`. The report
+  relies on `listInvoices()` normalising first, as the finance page already did.
+
+**Deferred for this phase:**
+
+* The invoice export still fails **silently** (no `catch`, no error toast) — the inconsistency this
+  phase deliberately did not fix.
+* The *Collected* vs *Amount paid* terminology split (unchanged; still a one-line fix).
+* Selecting the month is still component state, not a URL parameter, so a report month is not
+  linkable.
+* A second font weight for headings; landscape or multi-column layout; percentage-of-invoiced
+  columns.
+
 ---
 
 ## Deferred / Follow-up Items
@@ -539,6 +691,9 @@ Items surfaced by Phase 1 and deliberately left alone:
 * **Phase 3 prerequisite still open**: `issueDate` has no maximum or range validation, so an
   invoice can be dated in the future and create a phantom month (see §4 of
   [../DATE-FIELDS.md](../DATE-FIELDS.md)).
+* **`allowedDevOrigins` no longer covers this machine's LAN IP** — dev hydration is silently
+  blocked when the app is opened from an unlisted address (CODEBASE.md §8 #20). Hit again while
+  verifying Phase 4, which cost real debugging time. Not finance-specific and not fixed here.
 
 ---
 

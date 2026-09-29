@@ -1,8 +1,8 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { buttonVariants } from "@/components/ui/button"
+import { ChevronLeft, ChevronRight, FileDown } from "lucide-react"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Field, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
@@ -13,13 +13,19 @@ import { useFinanceInvoices } from "@/features/invoice-finance/hooks/useFinanceI
 import {
   calculateMonthlyFinance,
   currentMonth,
+  formatMonthLabel,
   monthKeyOf,
   shiftMonth,
 } from "@/features/invoice-finance/utils"
+import { useExportFinanceReport } from "@/features/invoice-finance/hooks/useExportFinanceReport"
+import { useSettings } from "@/features/settings/hooks/useSettings"
+import { toast } from "@/components/ui/toast"
 
 export default function FinancePage() {
   const { invoices, isLoading } = useFinanceInvoices()
   const [month, setMonth] = useState(currentMonth)
+  const settings = useSettings()
+  const { exportAsPdf, isExporting } = useExportFinanceReport()
 
   const monthInvoices = useMemo(
     () =>
@@ -38,6 +44,34 @@ export default function FinancePage() {
     () => calculateMonthlyFinance(monthInvoices),
     [monthInvoices]
   )
+
+  // Hands the report the very objects the page is showing — the selected month,
+  // its invoices, and their totals — so the PDF cannot disagree with the screen.
+  const onExport = async () => {
+    try {
+      const exported = await exportAsPdf({
+        businessName: settings.businessName,
+        month,
+        totals,
+        invoices: monthInvoices,
+      })
+
+      // A dismissed share sheet resolves false — don't claim it was exported.
+      if (exported) {
+        toast.add({
+          title: "Report exported",
+          description: `Financial report for ${formatMonthLabel(month)}.`,
+          type: "success",
+        })
+      }
+    } catch {
+      toast.add({
+        title: "Export failed",
+        description: "The report could not be created. Try again.",
+        type: "error",
+      })
+    }
+  }
 
   return (
     <div className="p-4 sm:p-6">
@@ -85,6 +119,17 @@ export default function FinancePage() {
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={onExport}
+                disabled={isExporting || isLoading || !month}
+                className="ml-auto gap-1.5"
+              >
+                <FileDown className="h-4 w-4" />
+                {isExporting ? "Exporting…" : "Export PDF"}
+              </Button>
             </div>
           </CardContent>
         </Card>
